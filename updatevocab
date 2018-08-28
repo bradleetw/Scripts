@@ -1,0 +1,40 @@
+#! /usr/bin/awk -f
+# This awk script is only for markdown file which is edting English learning post.
+# This awk script for finding the word that prefix is '!', which meaning new vocabulary, then doing 3 things.
+# 1. Replace vocabulary with html script:
+#	'!NewVocabulary' -> '[**NewVocabulary**](#NewVocabulary)<a name="NewVocabulary"></a>'
+# 2. Append vocabulary with html script in end of file:
+#	'- <a name="NewVocabulary"></a>**NewVocabulary**:()\t[back](#NewVocabulary_)\n\n'
+# 3. Save to file:	The file name would be "Orignial.md.new", the postfix name is .new
+# 2018.0819 Brad.Lee
+
+BEGIN {
+	NewVoc = 0
+	if(ARGC < 2)
+		error("usage: updatevocab sourcefile.md")
+	outputFileName = sprintf("%s.new", ARGV[1])
+	printf "" > outputFileName
+}
+{
+	fieldIndex = 1
+	while ( fieldIndex <= NF ) {
+		if ( match( $fieldIndex, /^![A-Za-z]+((-|_)[A-Za-z]+)?/ ) ) {
+			VocArray[NewVoc] = substr($fieldIndex, 2, RLENGTH - 1)
+			RestOfStr = ""
+			if(length($fieldIndex) != RLENGTH)
+				RestOfStr = substr($fieldIndex, RLENGTH+1)
+			$fieldIndex = sprintf("[**%s**](#%s)<a name=\"%s_\"></a>%s", VocArray[NewVoc], VocArray[NewVoc], VocArray[NewVoc], RestOfStr)
+			NewVoc++
+		}
+		printf "%s ", $fieldIndex >> outputFileName
+		fieldIndex++
+	}
+	print "" >> outputFileName
+}
+END {
+	for( i = 0; i < NewVoc; i++) {
+		printf "- <a name=\"%s\"></a>**%s**:()\t[back](#%s_)\n\n", VocArray[i],VocArray[i],VocArray[i] >> outputFileName
+	}
+	close(outputFileName)
+}
+function error(s) { printf("%s\n", s); exit 1 }

@@ -1,0 +1,158 @@
+#! /usr/bin/awk -f
+# This awk script extra counts the number of each file type in some folder, which takes the parameters from the result of foregoing command throught pipleline, "$ ls -lAFT".
+# . Major function: count the number of each file types.
+# It bases on the first digit of each line of the output by 'ls -lAT'.
+#
+# . 2nd function: list file name by group and user input.
+#
+# the meaning of the first digit:
+# b : Block special file.
+# c : Character special file.
+# d : Directory.
+# l : Symbolic link.
+# s : Socket link.
+# p : FIFO.
+# - : Regular file.
+#
+# awk: 20070501
+# macOS:10.13.6
+# 20180827 Brad.Lee
+
+
+# https://unix.stackexchange.com/questions/103114/what-do-the-fields-in-ls-al-output-mean
+# https://en.wikipedia.org/wiki/File_system_permissions#Notation_of_traditional_Unix_permissions
+# $1            $2  $3     $4     $5   $6$7$8       $9   $10
+# -rwxrw-r--    10    root   root 2048 7 2 16:34:20 2018 afile.exe
+# ?UUUGGGOOOS   00  UUUUUU GGGGGG #### # # ######## #### #########
+# ^ ^  ^  ^ ^    ^      ^      ^    ^  ^ ^       ^    ^         ^--- date stamp and file name are obvious ;-)
+# | |  |  | |    |      |      |    |  | |       |    \----------
+# | |  |  | |    |      |      |    |  | |       \---------------
+# | |  |  | |    |      |      |    |  | \----------------------- ?
+# | |  |  | |    |      |      |    |  \------------------------- ?
+# | |  |  | |    |      |      |    \---------------------------- File Size
+# | |  |  | |    |      |      \--------------------------------- Group Name (for example, Users, Administrators, etc)
+# | |  |  | |    |      \---------------------------------------- Owner Acct
+# | |  |  | |    \----------------------------------------------- Link count (what constitutes a "link" here varies)
+# | |  |  | \---------------------------------------------------- Alternative Access (blank means none defined, anything else varies)
+# | \--\--\------------------------------------------------------ Read, Write and Special access modes for [U]ser, [G]roup, and [O]thers (everyone else)
+# \-------------------------------------------------------------- File type flag
+BEGIN {
+    B_Count = 0 # block special file counter
+    C_Count = 0 # Character special file counter
+    D_Count = 0 # Directory counter
+    L_Count = 0 # Symbolic link counter
+    S_Count = 0 # Socket link counter
+    P_Count = 0 # FIFO counter
+    R_Count = 0 # Regular file counter.
+    O_Count = 0 # Others file counter.
+    for(i = 1; i < ARGC; i++){
+        if( match(ARGV[i], /^(a=)[a-z]+/) ){
+            SFtypeP = substr(ARGV[i], 3) # the parameters of showing different type file name
+            if ( match(SFtypeP, /r/) )
+                showR = 1
+            if ( match(SFtypeP, /d/) )
+                showD = 1
+            if ( match(SFtypeP, /l/) )
+                showL = 1
+            if ( match(SFtypeP, /s/) )
+                showS = 1
+            if ( match(SFtypeP, /p/) )
+                showP = 1
+            if ( match(SFtypeP, /b/) )
+                showB = 1
+            if ( match(SFtypeP, /c/) )
+                showC = 1
+            if ( match(SFtypeP, /o/) )
+                showO = 1
+        }
+
+#        if(ARGV[i] == "a=r")
+#            showR = 1
+#        else if(ARGV[i] == "a=d")
+#            showD = 1
+#        else if(ARGV[i] == "a=l")
+#            showL = 1
+#        else if(ARGV[i] == "a=s")
+#            showS = 1
+#        else if(ARGV[i] == "a=p")
+#            showP = 1
+#        else if(ARGV[i] == "a=b")
+#            showB = 1
+#        else if(ARGV[i] == "a=c")
+#            showC = 1
+#        else if(ARGV[i] == "a=o")
+#            showO = 1
+    }
+}
+{
+    if(NF >= 9)
+    {
+        firstC = substr($1, 1, 1)
+        if(firstC == "-")
+            R_Files[R_Count++] = $NF # the last field, $NF, is name.
+        else if(firstC == "d")
+            D_Files[D_Count++] = $NF
+        else if(firstC == "l")
+            L_Files[L_Count++]= $NF
+        else if(firstC == "s")
+            S_Files[S_Count++]= $NF
+        else if(firstC == "p")
+            P_Files[P_Count++]= $NF
+        else if(firstC == "b")
+            B_Files[B_Count++] = $NF
+        else if(firstC == "c")
+            C_Files[C_Count++]= $NF
+        else
+            O_Files[O_Count++]= $NF
+    }
+}
+END {
+    print "Total count of each type:"
+    print "=========================================="
+    printf "Regular File:\t%4d\nSub-Directory:\t%4d\n", R_Count, D_Count
+    printf "Symbolic link:\t%4d\n", L_Count
+    printf "Block special file:%4d\nSocket Link:\t%4d\nFIFO:\t\t%4d\n", B_Count, S_Count, P_Count
+    printf "Character special file:%4d\n", C_Count
+    printf "Other File:\t%4d\n", O_Count
+    print "=========================================="
+    if(showR && R_Count != 0){
+        print "Regular Files ------------------------"
+        for(i = 0; i < R_Count; i++)
+            printf "[%d] %s\n", i+1, R_Files[i]
+    }
+    if(showD && D_Count != 0){
+        print "Directory ----------------------------"
+        for(i = 0; i < D_Count; i++)
+            printf "[%d] %s\n", i+1, D_Files[i]
+    }
+    if(showL && L_Count != 0){
+        print "Symbolic link ------------------------"
+        for(i = 0; i < L_Count; i++)
+            printf "[%d] %s\n", i+1, L_Files[i]
+    }
+    if(showS && S_Count != 0){
+        print "Socket link --------------------------"
+        for(i = 0; i < S_Count; i++)
+            printf "[%d] %s\n", i+1, S_Files[i]
+    }
+    if(showP && P_Count != 0){
+        print "FIFO ---------------------------------"
+        for(i = 0; i < P_Count; i++)
+            printf "[%d] %s\n", i+1, P_Files[i]
+    }
+    if(showB && B_Count != 0){
+        print "Block special file -------------------"
+        for(i = 0; i < B_Count; i++)
+            printf "[%d] %s\n", i+1, B_Files[i]
+    }
+    if(showC && C_Count != 0){
+        print "Character special files --------------"
+        for(i = 0; i < C_Count; i++)
+            printf "[%d] %s\n", i+1, C_Files[i]
+    }
+    if(showO && O_Count != 0){
+        print "Others type files --------------------"
+        for(i = 0; i < O_Count; i++)
+            printf "[%d] %s\n", i+1, O_Files[i]
+    }
+}

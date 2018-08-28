@@ -1,0 +1,4 @@
+#! /bin/zsh
+# usage: 'lscount a=rdlspbco'
+# 
+ls -lA | filecounter $1
