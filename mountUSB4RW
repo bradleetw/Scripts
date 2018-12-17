@@ -1,0 +1,23 @@
+#! /bin/zsh
+# usage: ''
+#
+if [ -b "/dev/disk2" ]
+# Examine external hard disk whether exist or not.
+# -b : Block special file.
+then
+    if [ -d "/Volumes/SOHOT CUBE" ]
+    # check whether the directory exist or not
+    then
+        echo "USB Driver - SOHOT CUBE: is mounted."
+        echo "Umount USB Driver first."
+        sudo umount /Volumes/SOHOT\ CUBE
+    else
+        echo "USB Driver - SOHOT CUBE: Not be mounted."
+    fi
+    sudo mount_ntfs -o rw,nobrowse /dev/disk2s1 ~/Desktop/BVHD
+else
+    echo "Have no external Hard disk."
+fi
+
+#sudo umount /Volumes/SOHOT\ CUBE
+#sudo mount_ntfs -o rw,nobrowse /dev/disk2s1 ~/Desktop/BVHD
