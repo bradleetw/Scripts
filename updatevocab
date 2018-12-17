@@ -33,7 +33,7 @@ BEGIN {
 }
 END {
 	for( i = 0; i < NewVoc; i++) {
-		printf "- <a name=\"%s\"></a>**%s**:()\t[back](#%s_)\n\n", VocArray[i],VocArray[i],VocArray[i] >> outputFileName
+		printf "- <a name=\"%s\"></a>**%s**:()\t[back](#%s_)\n\n---\n", VocArray[i],VocArray[i],VocArray[i] >> outputFileName
 	}
 	close(outputFileName)
 }
